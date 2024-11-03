@@ -1,3 +1,4 @@
+'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -5,9 +6,9 @@ const TIME_TO_MOVE = 200;
 
 type Position = { x: number; y: number };
 
-export function Snake({
-  rows,
-  cols,
+export default function Snake({
+  rows = 8,
+  cols = 9,
   snakeLength = 3,
 }: {
   rows: number;
@@ -34,6 +35,7 @@ export function Snake({
 
   const moveSnake = useCallback(
     ({ x, y }: Position, currentSnake: Position[]) => {
+      console.log('moveSnake');
       const newSnake = [...currentSnake];
       const headSnake = newSnake[0];
 
@@ -69,6 +71,16 @@ export function Snake({
     [cols, rows]
   );
 
+  const resetGame = () => {
+    setIsAutoMove(false);
+    setHitCount(0);
+    const initialSnake = Array.from({ length: snakeLength }, (_, index) => ({
+      x: Math.floor(cols / 2) - Math.floor(snakeLength / 2) + index,
+      y: Math.floor(rows / 2),
+    }));
+    setSnake(initialSnake);
+  };
+
   useEffect(() => {
     if (isAutoMove) {
       const interval = setInterval(
@@ -81,6 +93,10 @@ export function Snake({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (hitCount >= 10) {
+        return;
+      }
+      console.log('handleKeyDown');
       let currentPosition: Position | null = null;
       switch (event.key) {
         case 'ArrowLeft':
@@ -113,48 +129,80 @@ export function Snake({
 
   console.log('hitCount', hitCount);
 
+  useEffect(() => {
+    if (isGameOver) {
+      setIsAutoMove(false);
+    }
+  }, [isGameOver]);
+
   return (
-    <div className="flex flex-col w-full items-center p-10">
-      <h2 className="mb-8 text-2xl font-semibold text-blue-400 underline">
+    <div className='flex flex-col w-full items-center p-10'>
+      <h2 className='mb-8 text-2xl font-semibold text-blue-400 underline'>
         Snake game
       </h2>
+
       <button
         onClick={() => setIsAutoMove((x) => !x)}
-        className="mb-4 px-6 py-1 border border-blue-400 rounded"
+        className='mb-4 px-6 py-1 border border-blue-400 rounded'
       >
         {isAutoMove ? 'click' : 'auto'}
       </button>
-      {Array.from({ length: rows }, (_, rowIndex) => (
-        <div key={rowIndex} className="flex justify-center items-center">
-          {Array.from({ length: cols }, (_, colIndex) => {
-            const isSnakePart = snake.some(
-              (pic) => pic.x === colIndex && pic.y === rowIndex
-            );
-            const isHead =
-              isSnakePart && snake[0].x === colIndex && snake[0].y === rowIndex;
+      <div>
+        {Array.from({ length: rows }, (_, rowIndex) => (
+          <div key={rowIndex} className='flex justify-center items-center'>
+            {Array.from({ length: cols }, (_, colIndex) => {
+              const isSnakePart = snake.some(
+                (pic) => pic.x === colIndex && pic.y === rowIndex
+              );
+              const isHead =
+                isSnakePart &&
+                snake[0].x === colIndex &&
+                snake[0].y === rowIndex;
 
-            return (
-              <div
-                key={`${rowIndex}-${colIndex}`}
-                className={twMerge(
-                  'w-8 h-8 border relative',
-                  `${isSnakePart ? 'bg-blue-400 border rounded-full' : 'bg-white'}`
-                )}
-              >
-                {isHead && (
-                  <>
-                    <div className="absolute w-2 h-2 bg-white rounded-full top-[20%] left-[15%]" />
-                    <div className="absolute w-2 h-2 bg-white rounded-full top-[20%] left-[55%]" />
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      ))}
+              return (
+                <div
+                  key={`${rowIndex}-${colIndex}`}
+                  className={twMerge(
+                    'w-8 h-8 border relative',
+                    `${
+                      isSnakePart
+                        ? hitCount >= 10
+                          ? 'bg-red-500 border rounded-full'
+                          : 'bg-blue-400 border rounded-full'
+                        : 'bg-white'
+                    }`
+                  )}
+                >
+                  {isHead &&
+                    (hitCount >= 10 ? (
+                      <>
+                        <div className='absolute w-2 h-1 bg-white top-[20%] left-[15%]' />
+                        <div className='absolute w-2 h-1 bg-white top-[20%] left-[55%]' />
+                      </>
+                    ) : (
+                      <>
+                        <div className='absolute w-2 h-2 bg-white rounded-full top-[20%] left-[15%]' />
+                        <div className='absolute w-2 h-2 bg-white rounded-full top-[20%] left-[55%]' />
+                      </>
+                    ))}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
       {isGameOver && (
-        <div className="mt-4 px-6  text-red-400 text-lg">
-          Game over! You hit the border 10 times.
+        <div className='flex flex-col items-center'>
+          <div className='mt-4 px-6  text-red-400 text-lg'>
+            Game over! You hit the border 10 times.
+          </div>
+          <button
+            onClick={resetGame}
+            className='w-40 mt-4 px-4 py-1 border border-blue-400 rounded'
+          >
+            restart
+          </button>
         </div>
       )}
     </div>
