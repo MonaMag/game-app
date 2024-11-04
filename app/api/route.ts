@@ -8,7 +8,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  snakeData = body.snake;
-  return NextResponse.json({ success: true });
+  try {
+    const body = await request.json();
+    snakeData = body.snake;
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Invalid data format' },
+      { status: 400 }
+    );
+  }
 }

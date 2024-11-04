@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Board } from './Board';
 
 const TIME_TO_MOVE = 200;
+const HIT_COUNT = 10;
 
 export type Position = { x: number; y: number };
 
@@ -18,8 +19,9 @@ export default function SnakeGame({
   const [snake, setSnake] = useState<Position[]>([]);
   const [isAutoMove, setIsAutoMove] = useState(false);
   const [hitCount, setHitCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const isGameOver = hitCount >= 10;
+  const isGameOver = hitCount >= HIT_COUNT;
 
   const currentPositionRef = useRef<Position>({ x: 0, y: 0 });
   const currentSnake = useRef<Position[]>(snake);
@@ -38,21 +40,46 @@ export default function SnakeGame({
   };
 
   //fetch position snake data
-  useEffect(() => {
-    const fetchData = async () => {
-      const response = await fetch('/api');
-      const data = await response.json();
-      if (Array.isArray(data) && data.length > 0) {
-        setSnake(data);
-      } else {
-        setSnake(initializeSnake(cols, rows, snakeLength));
-      }
-    };
-    fetchData();
-  }, [snakeLength, cols, rows]);
+  const fetchSnakeData = async (): Promise<Position[]> => {
+    const response = await fetch('/api');
+    const data = await response.json();
+
+    if (Array.isArray(data)) {
+      return data;
+    }
+    throw new Error('Invalid data format');
+  };
+
+  //update position snake data
+  const sendSnakeData = async (newSnake: Position[]) => {
+    await fetch('/api', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ snake: newSnake }),
+    });
+  };
 
   useEffect(() => {
-    setSnake(initializeSnake(cols, rows, snakeLength));
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await fetchSnakeData();
+        if (data.length > 0) {
+          setSnake(data);
+        } else {
+          setSnake(initializeSnake(cols, rows, snakeLength));
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        setSnake(initializeSnake(cols, rows, snakeLength));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
   }, [snakeLength, cols, rows]);
 
   const moveSnake = useCallback(
@@ -88,13 +115,7 @@ export default function SnakeGame({
       newSnake.pop();
       setSnake(newSnake);
 
-      await fetch('/api', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ snake: newSnake }),
-      });
+      await sendSnakeData(newSnake);
 
       return newSnake;
     },
@@ -108,21 +129,20 @@ export default function SnakeGame({
   };
 
   useEffect(() => {
-    if (isAutoMove) {
+    if (isAutoMove && !isGameOver) {
       const interval = setInterval(
         () => moveSnake(currentPositionRef.current, currentSnake.current),
         TIME_TO_MOVE
       );
       return () => clearInterval(interval);
     }
-  }, [isAutoMove, moveSnake]);
+  }, [isAutoMove, moveSnake, isGameOver]);
 
   useEffect(() => {
     const handleKeyDown = async (event: KeyboardEvent) => {
-      if (hitCount >= 10) {
+      if (hitCount >= 10 || isLoading) {
         return;
       }
-      console.log('handleKeyDown');
       let currentPosition: Position | null = null;
       switch (event.key) {
         case 'ArrowLeft':
@@ -154,9 +174,11 @@ export default function SnakeGame({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isAutoMove, moveSnake, hitCount]);
+  }, [isAutoMove, moveSnake, hitCount, isLoading]);
 
   console.log('hitCount', hitCount);
+  console.log('isGameOver', isGameOver);
+  console.log('isAutoMove', isAutoMove);
 
   useEffect(() => {
     if (isGameOver) {
@@ -165,15 +187,32 @@ export default function SnakeGame({
   }, [isGameOver]);
 
   return (
-    <Board
-      rows={rows}
-      cols={cols}
-      snake={snake}
-      hitCount={hitCount}
-      isGameOver={isGameOver}
-      onToggleAutoMove={() => setIsAutoMove((prev) => !prev)}
-      onRestart={resetGame}
-      isAutoMove={isAutoMove}
-    />
+    <div className='flex flex-col w-full items-center p-10'>
+      <h2 className='mb-8 text-2xl font-semibold text-blue-400 underline'>
+        Snake game
+      </h2>
+
+      <button
+        onClick={() => setIsAutoMove((prev) => !prev)}
+        className='mb-4 px-6 py-1 border border-blue-400 rounded'
+      >
+        {isAutoMove ? 'click' : 'auto'}
+      </button>
+      <Board rows={rows} cols={cols} snake={snake} hitCount={hitCount} />
+
+      {isGameOver && (
+        <div className='flex flex-col items-center'>
+          <div className='mt-4 px-6 text-red-400 text-lg'>
+            Game over! You hit the border 10 times.
+          </div>
+          <button
+            onClick={resetGame}
+            className='w-40 mt-4 px-4 py-1 border border-blue-400 rounded'
+          >
+            restart
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
