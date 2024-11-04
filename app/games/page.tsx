@@ -1,12 +1,12 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { twMerge } from 'tailwind-merge';
+import { Board } from './Board';
 
 const TIME_TO_MOVE = 200;
 
-type Position = { x: number; y: number };
+export type Position = { x: number; y: number };
 
-export default function Snake({
+export default function SnakeGame({
   rows = 8,
   cols = 9,
   snakeLength = 3,
@@ -20,22 +20,43 @@ export default function Snake({
   const [hitCount, setHitCount] = useState(0);
 
   const isGameOver = hitCount >= 10;
-
+  
   const currentPositionRef = useRef<Position>({ x: 0, y: 0 });
   const currentSnake = useRef<Position[]>(snake);
   currentSnake.current = snake;
 
-  useEffect(() => {
-    const initialSnake = Array.from({ length: snakeLength }, (_, index) => ({
+  //initializ snake
+  const initializeSnake = (
+    cols: number,
+    rows: number,
+    snakeLength: number
+  ): Position[] => {
+    return Array.from({ length: snakeLength }, (_, index) => ({
       x: Math.floor(cols / 2) - Math.floor(snakeLength / 2) + index,
       y: Math.floor(rows / 2),
     }));
-    setSnake(initialSnake);
+  };
+
+  //fetch position snake data
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch('/api');
+      const data = await response.json();
+      if (Array.isArray(data) && data.length > 0) {
+        setSnake(data);
+      } else {
+        setSnake(initializeSnake(snakeLength, cols, rows));
+      }
+    };
+    fetchData();
+  }, [snakeLength, cols, rows]);
+
+  useEffect(() => {
+    setSnake(initializeSnake(snakeLength, cols, rows));
   }, [snakeLength, cols, rows]);
 
   const moveSnake = useCallback(
-    ({ x, y }: Position, currentSnake: Position[]) => {
-      console.log('moveSnake');
+    async ({ x, y }: Position, currentSnake: Position[]) => {
       const newSnake = [...currentSnake];
       const headSnake = newSnake[0];
 
@@ -66,6 +87,15 @@ export default function Snake({
       newSnake.unshift(newHead);
       newSnake.pop();
       setSnake(newSnake);
+
+      await fetch('/api', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ snake: newSnake }),
+      });
+
       return newSnake;
     },
     [cols, rows]
@@ -92,7 +122,7 @@ export default function Snake({
   }, [isAutoMove, moveSnake]);
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const handleKeyDown = async (event: KeyboardEvent) => {
       if (hitCount >= 10) {
         return;
       }
@@ -115,7 +145,10 @@ export default function Snake({
       if (currentPosition) {
         currentPositionRef.current = currentPosition;
         if (!isAutoMove) {
-          const newSnake = moveSnake(currentPosition, currentSnake.current);
+          const newSnake = await moveSnake(
+            currentPosition,
+            currentSnake.current
+          );
           setSnake(newSnake);
         }
       }
@@ -125,7 +158,7 @@ export default function Snake({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isAutoMove, moveSnake]);
+  }, [isAutoMove, moveSnake, hitCount]);
 
   console.log('hitCount', hitCount);
 
@@ -136,75 +169,15 @@ export default function Snake({
   }, [isGameOver]);
 
   return (
-    <div className='flex flex-col w-full items-center p-10'>
-      <h2 className='mb-8 text-2xl font-semibold text-blue-400 underline'>
-        Snake game
-      </h2>
-
-      <button
-        onClick={() => setIsAutoMove((x) => !x)}
-        className='mb-4 px-6 py-1 border border-blue-400 rounded'
-      >
-        {isAutoMove ? 'click' : 'auto'}
-      </button>
-      <div>
-        {Array.from({ length: rows }, (_, rowIndex) => (
-          <div key={rowIndex} className='flex justify-center items-center'>
-            {Array.from({ length: cols }, (_, colIndex) => {
-              const isSnakePart = snake.some(
-                (pic) => pic.x === colIndex && pic.y === rowIndex
-              );
-              const isHead =
-                isSnakePart &&
-                snake[0].x === colIndex &&
-                snake[0].y === rowIndex;
-
-              return (
-                <div
-                  key={`${rowIndex}-${colIndex}`}
-                  className={twMerge(
-                    'w-8 h-8 border relative',
-                    `${
-                      isSnakePart
-                        ? hitCount >= 10
-                          ? 'bg-red-500 border rounded-full'
-                          : 'bg-blue-400 border rounded-full'
-                        : 'bg-white'
-                    }`
-                  )}
-                >
-                  {isHead &&
-                    (hitCount >= 10 ? (
-                      <>
-                        <div className='absolute w-2 h-1 bg-white top-[20%] left-[15%]' />
-                        <div className='absolute w-2 h-1 bg-white top-[20%] left-[55%]' />
-                      </>
-                    ) : (
-                      <>
-                        <div className='absolute w-2 h-2 bg-white rounded-full top-[20%] left-[15%]' />
-                        <div className='absolute w-2 h-2 bg-white rounded-full top-[20%] left-[55%]' />
-                      </>
-                    ))}
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-
-      {isGameOver && (
-        <div className='flex flex-col items-center'>
-          <div className='mt-4 px-6  text-red-400 text-lg'>
-            Game over! You hit the border 10 times.
-          </div>
-          <button
-            onClick={resetGame}
-            className='w-40 mt-4 px-4 py-1 border border-blue-400 rounded'
-          >
-            restart
-          </button>
-        </div>
-      )}
-    </div>
+    <Board
+      rows={rows}
+      cols={cols}
+      snake={snake}
+      hitCount={hitCount}
+      isGameOver={isGameOver}
+      onToggleAutoMove={() => setIsAutoMove((prev) => !prev)}
+      onRestart={resetGame}
+      isAutoMove={isAutoMove}
+    />
   );
 }
