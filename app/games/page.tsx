@@ -20,7 +20,7 @@ export default function SnakeGame({
   const [hitCount, setHitCount] = useState(0);
 
   const isGameOver = hitCount >= 10;
-  
+
   const currentPositionRef = useRef<Position>({ x: 0, y: 0 });
   const currentSnake = useRef<Position[]>(snake);
   currentSnake.current = snake;
@@ -45,14 +45,14 @@ export default function SnakeGame({
       if (Array.isArray(data) && data.length > 0) {
         setSnake(data);
       } else {
-        setSnake(initializeSnake(snakeLength, cols, rows));
+        setSnake(initializeSnake(cols, rows, snakeLength));
       }
     };
     fetchData();
   }, [snakeLength, cols, rows]);
 
   useEffect(() => {
-    setSnake(initializeSnake(snakeLength, cols, rows));
+    setSnake(initializeSnake(cols, rows, snakeLength));
   }, [snakeLength, cols, rows]);
 
   const moveSnake = useCallback(
@@ -104,11 +104,7 @@ export default function SnakeGame({
   const resetGame = () => {
     setIsAutoMove(false);
     setHitCount(0);
-    const initialSnake = Array.from({ length: snakeLength }, (_, index) => ({
-      x: Math.floor(cols / 2) - Math.floor(snakeLength / 2) + index,
-      y: Math.floor(rows / 2),
-    }));
-    setSnake(initialSnake);
+    setSnake(initializeSnake(cols, rows, snakeLength));
   };
 
   useEffect(() => {
