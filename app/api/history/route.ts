@@ -1,31 +1,28 @@
+import { Position } from '@/app/games/snake-game';
 import { NextResponse } from 'next/server';
-import { Position } from '../games/snake-game';
 import { z } from 'zod';
 
+let snakeHistory: Position[] = [];
 const positionSchema = z.object({
   x: z.number(),
   y: z.number(),
 });
 
-const requestBodySchema = z.object({
-  snake: z.array(positionSchema),
-});
-
-let snakeData: Position[] = [];
+const requestBodySchema = z.array(positionSchema);
 
 export async function GET() {
-  console.log('GET-DATA:', snakeData);
-  return NextResponse.json(snakeData);
+  console.log('GET-HISTOTY:', snakeHistory);
+  return NextResponse.json(snakeHistory);
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    requestBodySchema.parse(body);
+    const body: Position[] = await request.json();
+    requestBodySchema.parse({ body });
 
-    snakeData = body.snake; 
+    snakeHistory = body;
 
-    console.log('POST-DATA:', snakeData);
+    console.log('POST-HISTOTY:', snakeHistory);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.log('Error:', error);
