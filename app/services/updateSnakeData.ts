@@ -6,6 +6,6 @@ export const sendSnakeData = async (newSnake: Position[]) => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ snake: newSnake }),
+    body: JSON.stringify(newSnake),
   });
 };
