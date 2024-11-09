@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
-import { Position } from '../games/snake-game';
+import { GameDataType, Position } from '../games/snake-game';
 import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';
 
-const filePath = path.join(process.cwd(), 'data', 'snakeData.json');
-
-//let snakeData: Position[] = [];
+const filePath = path.join(process.cwd(), 'data', 'snakeGameData.json');
 
 const gameData = {
   history: [] as Position[],
@@ -18,17 +16,21 @@ const positionSchema = z.object({
   y: z.number(),
 });
 
-const requestBodySchema = z.array(positionSchema);
+const gameDataSchema = z.object({
+  current: z.array(positionSchema),
+  history: z.array(positionSchema),
+});
 
 export async function GET() {
   try {
     if (fs.existsSync(filePath)) {
       const fileContents = fs.readFileSync(filePath, 'utf8');
-      gameData.current = JSON.parse(fileContents);
+      //gameData.current = JSON.parse(fileContents);
+      Object.assign(gameData, JSON.parse(fileContents));
     }
 
     console.log('GET-DATA:', gameData);
-    return NextResponse.json(gameData.current);
+    return NextResponse.json(gameData);
   } catch (error) {
     console.log('Error reading data:', error);
     return NextResponse.json(
@@ -40,14 +42,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body: Position[] = await request.json();
-    requestBodySchema.parse(body);
+    const body: GameDataType = await request.json();
+    gameDataSchema.parse(body);
 
-    //snakeData = body.snake;
+    gameData.current = body.current;
+    gameData.history = body.history;
 
-    gameData.current = body;
-
-    fs.writeFileSync(filePath, JSON.stringify(gameData.current, null, 2));
+    fs.writeFileSync(filePath, JSON.stringify(gameData, null, 2));
 
     console.log('POST-DATA:', gameData);
     return NextResponse.json({ success: true });

@@ -2,16 +2,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Board } from './Board';
 import { useInterval } from '../hooks/useInterval';
-import { fetchSnakeData } from '../services/fetchSnakeData';
-import { fetchHistoryData } from '../services/fetchHistoryData';
-import { sendSnakeData } from '../services/updateSnakeData';
-import { sendHistoryData } from '../services/updateHistoryData';
+//import { fetchSnakeData } from '../services/fetchSnakeData';
+//import { fetchHistoryData } from '../services/fetchHistoryData';
+//import { sendSnakeData } from '../services/updateSnakeData';
+//import { sendHistoryData } from '../services/updateHistoryData';
+import { fetchGameData } from '../services/fetchGamedata';
+import { sendGameData } from '../services/updateGameData';
 
-const TIME_TO_MOVE = 200;
+//const TIME_TO_MOVE = 200;
 const HIT_COUNT = 10;
 const HISTORY_SEND_INTERVAL = 4000;
 
 export type Position = { x: number; y: number };
+export type GameDataType = {
+  history: Position[];
+  current: Position[];
+};
 
 export function SnakeGame({
   rows = 8,
@@ -54,40 +60,65 @@ export function SnakeGame({
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchSnakeData();
-        if (data.length > 0) {
-          setSnake(data);
+        const data = await fetchGameData();
+        if (data.current.length > 0) {
+          setSnake(data.current);
+          setHistory(data.history);
         } else {
-          setSnake(initializeSnake(cols, rows, snakeLength));
-        }
-      } catch (error) {
-        console.log('Error:', error);
-        setSnake(initializeSnake(cols, rows, snakeLength));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [snakeLength, cols, rows]);
-
-  // Fetch history data on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await fetchHistoryData();
-        if (data.length > 0) {
-          setHistory(data);
-        } else {
+          const initialSnake = initializeSnake(cols, rows, snakeLength);
+          setSnake(initialSnake);
           setHistory([]);
         }
       } catch (error) {
         console.log('Error:', error);
+        const initialSnake = initializeSnake(cols, rows, snakeLength);
+        setSnake(initialSnake);
+        setHistory([]);
+      } finally {
+        setIsLoading(false);
       }
     };
-
     fetchData();
-  }, []);
+  }, [snakeLength, cols, rows]);
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     setIsLoading(true);
+  //     try {
+  //       const data = await fetchSnakeData();
+  //       if (data.length > 0) {
+  //         setSnake(data);
+  //       } else {
+  //         setSnake(initializeSnake(cols, rows, snakeLength));
+  //       }
+  //     } catch (error) {
+  //       console.log('Error:', error);
+  //       setSnake(initializeSnake(cols, rows, snakeLength));
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+
+  //   fetchData();
+  // }, [snakeLength, cols, rows]);
+
+  // Fetch history data on mount
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const data = await fetchHistoryData();
+  //       if (data.length > 0) {
+  //         setHistory(data);
+  //       } else {
+  //         setHistory([]);
+  //       }
+  //     } catch (error) {
+  //       console.log('Error:', error);
+  //     }
+  //   };
+
+  //   fetchData();
+  // }, []);
 
   // move snake
   const moveSnake = useCallback(
@@ -124,7 +155,7 @@ export function SnakeGame({
       setSnake(newSnake);
       setHistory((prevHistory) => [...prevHistory, newHead]);
 
-      await sendSnakeData(newSnake);
+      await sendGameData(newSnake, [...historyRef.current, newHead]);
 
       return newSnake;
     },
@@ -139,8 +170,7 @@ export function SnakeGame({
     setSnake(initialSnake);
     setHistory([]);
 
-    await sendSnakeData(initialSnake);
-    await sendHistoryData([]);
+    await sendGameData(initialSnake, []);
   };
 
   // Handle key press events for snake movement
@@ -182,17 +212,17 @@ export function SnakeGame({
     };
   }, [isAutoMove, moveSnake, isGameOver, isLoading]);
 
-  useInterval(
-    () => {
-      if (isAutoMove && !isGameOver) {
-        moveSnake(currentPositionRef.current, snake);
-      }
-    },
-    isAutoMove && !isGameOver ? TIME_TO_MOVE : undefined
-  );
+  // useInterval(
+  //   () => {
+  //     if (isAutoMove && !isGameOver) {
+  //       moveSnake(currentPositionRef.current, snake);
+  //     }
+  //   },
+  //   isAutoMove && !isGameOver ? TIME_TO_MOVE : undefined
+  // );
 
   useInterval(() => {
-    sendHistoryData(history);
+    sendGameData(snake, history);
   }, HISTORY_SEND_INTERVAL);
 
   useEffect(() => {
