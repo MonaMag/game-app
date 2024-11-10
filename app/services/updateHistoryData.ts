@@ -1,4 +1,4 @@
-import { Position } from "../games/snake-game";
+import { Position } from '../snake/SnakeGame';
 
 export const sendHistoryData = async (newHistory: Position[]) => {
   await fetch('/api/history', {

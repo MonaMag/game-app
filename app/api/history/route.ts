@@ -1,4 +1,4 @@
-import { Position } from '@/app/games/snake-game';
+import { Position } from '@/app/snake/SnakeGame';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import fs from 'fs';
@@ -24,7 +24,7 @@ export async function GET() {
   try {
     if (fs.existsSync(filePath)) {
       const fileContents = fs.readFileSync(filePath, 'utf8');
-     
+
       gameData.history = JSON.parse(fileContents);
     }
 

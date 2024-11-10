@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GameDataType, Position } from '../games/snake-game';
+import { GameDataType, Position } from '../snake/SnakeGame';
 import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';

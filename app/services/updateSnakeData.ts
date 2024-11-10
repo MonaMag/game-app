@@ -1,4 +1,4 @@
-import { Position } from '../games/snake-game';
+import { Position } from '../snake/SnakeGame';
 
 export const sendSnakeData = async (newSnake: Position[]) => {
   await fetch('/api', {

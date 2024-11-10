@@ -1,8 +1,8 @@
-import { GameDataType } from "../games/snake-game";
+import { GameDataType } from '../snake/SnakeGame';
 
 export const fetchGameData = async (): Promise<GameDataType> => {
   const response = await fetch('/api');
-  
+
   if (!response.ok) {
     throw new Error('Failed to fetch data');
   }

@@ -1,6 +1,9 @@
-import { Position } from '../games/snake-game';
+import { Position } from '../snake/SnakeGame';
 
-export const sendGameData = async (currentSnake: Position[], history: Position[]) => {
+export const sendGameData = async (
+  currentSnake: Position[],
+  history: Position[]
+) => {
   const body = {
     current: currentSnake,
     history: history,

@@ -1,6 +1,4 @@
-import { Position } from "./snake-game";
-
-
+import { Position } from './SnakeGame';
 
 export const Board = ({
   rows,

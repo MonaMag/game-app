@@ -1,4 +1,4 @@
-import { Position } from '../games/snake-game';
+import { Position } from '../snake/SnakeGame';
 
 export const fetchSnakeData = async (): Promise<Position[]> => {
   const response = await fetch('/api');
@@ -9,4 +9,3 @@ export const fetchSnakeData = async (): Promise<Position[]> => {
   }
   throw new Error('Invalid data format');
 };
-
