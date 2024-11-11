@@ -6,7 +6,7 @@ export const Header = () => {
       <Link href='/'>Home</Link>
       <Link href='/tictactoy'>TicTacToy</Link>
       <Link href='/snake'>Snake</Link>
-      <Link href='/chess'>Сhess</Link>
+      <Link href='/checkers'>Сheckers</Link>
     </header>
   );
 };
