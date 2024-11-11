@@ -105,18 +105,18 @@ export default function ChekerPage() {
     (x: number, y: number, targetX: number, targetY: number) => {
       console.log('moveChecker');
       const newBoard = [...board];
-      const selectedChecker = newBoard[x][y].checker;
+      const selectedChecker = newBoard[y][x].checker;
 
-      if (newBoard[targetX][targetY].checker !== null) {
+      if (newBoard[targetY][targetX].checker !== null) {
         
         const jumpX = targetX + (targetX - x);
         const jumpY = targetY + (targetY - y);
-        newBoard[targetX][targetY].checker = null; 
-        newBoard[jumpX][jumpY].checker = selectedChecker;
+        newBoard[targetY][targetX].checker = null; 
+        newBoard[jumpY][jumpX].checker = selectedChecker;
       } else {
-        newBoard[targetX][targetY].checker = selectedChecker;
+        newBoard[targetY][targetX].checker = selectedChecker;
       }
-      newBoard[x][y].checker = null;
+      newBoard[y][x].checker = null;
       setBoard(newBoard);
     },
     [board]
@@ -132,11 +132,11 @@ export default function ChekerPage() {
       if (isValidMove(selectedX, selectedY, x, y, board)) {
         moveChecker(selectedX, selectedY, x, y);
         setSelected(null);
-        setIsWhiteTurn(!isWhiteTurn);
+        //setIsWhiteTurn(!isWhiteTurn);
         return;
       }
     }
-    const selectedCell = board[x][y];
+    const selectedCell = board[y][x];
     if (selectedCell.checker === 'white' && isWhiteTurn) {
       setSelected({ x, y });
     }

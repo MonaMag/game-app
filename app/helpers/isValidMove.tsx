@@ -14,18 +14,23 @@ export const isValidMove = (
   }
   const dx = Math.abs(targetX - x);
   const dy = Math.abs(targetY - y);
-  if (dx !== dy || dx > 1) return false;
+  if (dx !== dy || dx > 2) return false;
 
-  const targetCell = board[targetX][targetY];
-  const selectedCell = board[x][y];
+  const targetCell = board[targetY][targetX];
+  const selectedCell = board[y][x];
+
+  console.log('targetCell', targetCell);
+  console.log('selectedCell', x, y, selectedCell);
 
   if (targetCell.checker !== null) {
     const isOpponentChecker =
-      targetCell.checker === 'black' && selectedCell.checker === 'white';
+      (targetCell.checker === 'black' && selectedCell.checker === 'white') ||
+      (targetCell.checker === 'white' && selectedCell.checker === 'black');
 
     if (isOpponentChecker) {
       const jumpX = targetX + (targetX - x);
       const jumpY = targetY + (targetY - y);
+      
       const isJumpCell =
         jumpX >= 0 &&
         jumpX < 8 &&
@@ -38,11 +43,11 @@ export const isValidMove = (
     return false;
   }
 
-  if (selectedCell.checker === 'white' && targetX >= x) {
+  if (selectedCell.checker === 'white' && targetY >= y) {
     return false;
   }
 
-  if (selectedCell.checker === 'black' && targetX <= x) {
+  if (selectedCell.checker === 'black' && targetY <= y) {
     return false;
   }
 

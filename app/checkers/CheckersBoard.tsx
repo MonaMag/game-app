@@ -22,7 +22,7 @@ export default function CheckersBoard({ board, onClickCell }: BoardProps) {
                   : 'bg-stone-700'
               }`
             )}
-            onClick={() => onClickCell(rowIndex, cellIndex)}
+            onClick={() => onClickCell(cellIndex, rowIndex)}
           >
             {cell.checker && (
               <div
