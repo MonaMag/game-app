@@ -1,4 +1,5 @@
 import { Cell } from "../types";
+import { isWithinBounds } from "./isWithinBounds";
 
 export const getPossibleCheckerMoves = (x: number, y: number, kind: 'black' | 'white', board: Cell[][]) => {
     const moves: {x: number, y: number, eat: boolean}[] = [];
@@ -11,7 +12,7 @@ export const getPossibleCheckerMoves = (x: number, y: number, kind: 'black' | 'w
       const targetY = y + dy;
       const targetX = x + dx;
 
-      if (targetX >= 0 && targetX < 8 && targetY >= 0 && targetY < 8) {
+      if (isWithinBounds(targetX, targetY)) {
         const targetCell = board[targetY][targetX];
 
         if (targetCell.checker === null) {
@@ -21,10 +22,7 @@ export const getPossibleCheckerMoves = (x: number, y: number, kind: 'black' | 'w
           const jumpY = targetY + dy;
 
           if (
-            jumpX >= 0 &&
-            jumpX < 8 &&
-            jumpY >= 0 &&
-            jumpY < 8 &&
+            isWithinBounds(jumpX, jumpY) &&
             board[jumpY][jumpX].checker === null
           ) {
             moves.push({ x: jumpX, y: jumpY, eat: true });

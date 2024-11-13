@@ -1,4 +1,5 @@
 import { Cell } from '../types';
+import { isWithinBounds } from './isWithinBounds';
 
 export const isValidMove = (
   x: number,
@@ -8,10 +9,7 @@ export const isValidMove = (
   board: Cell[][]
 ) => {
   if (
-    targetX < 0 ||
-    targetX >= 8 ||
-    targetY < 0 ||
-    targetY >= 8 ||
+    !isWithinBounds(targetX, targetY) ||
     board[targetY][targetX].checker !== null
   ) {
     return false;
