@@ -1,98 +1,13 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import CheckersBoard from './CheckersBoard';
 import { isValidMove } from '../helpers/isValidMove';
-
-export type Cheker = 'white' | 'black' | null;
-
-export interface Cell {
-  checker: Cheker;
-}
-
-const initialBoard: Cell[][] = [
-  [
-    { checker: null },
-    { checker: 'black' },
-    { checker: null },
-    { checker: 'black' },
-    { checker: null },
-    { checker: 'black' },
-    { checker: null },
-    { checker: 'black' },
-  ],
-  [
-    { checker: 'black' },
-    { checker: null },
-    { checker: 'black' },
-    { checker: null },
-    { checker: 'black' },
-    { checker: null },
-    { checker: 'black' },
-    { checker: null },
-  ],
-  [
-    { checker: null },
-    { checker: 'black' },
-    { checker: null },
-    { checker: 'black' },
-    { checker: null },
-    { checker: 'black' },
-    { checker: null },
-    { checker: 'black' },
-  ],
-
-  [
-    { checker: null },
-    { checker: null },
-    { checker: null },
-    { checker: null },
-    { checker: null },
-    { checker: null },
-    { checker: null },
-    { checker: null },
-  ],
-  [
-    { checker: null },
-    { checker: null },
-    { checker: null },
-    { checker: null },
-    { checker: null },
-    { checker: null },
-    { checker: null },
-    { checker: null },
-  ],
-  [
-    { checker: 'white' },
-    { checker: null },
-    { checker: 'white' },
-    { checker: null },
-    { checker: 'white' },
-    { checker: null },
-    { checker: 'white' },
-    { checker: null },
-  ],
-  [
-    { checker: null },
-    { checker: 'white' },
-    { checker: null },
-    { checker: 'white' },
-    { checker: null },
-    { checker: 'white' },
-    { checker: null },
-    { checker: 'white' },
-  ],
-  [
-    { checker: 'white' },
-    { checker: null },
-    { checker: 'white' },
-    { checker: null },
-    { checker: 'white' },
-    { checker: null },
-    { checker: 'white' },
-    { checker: null },
-  ],
-];
+import { Cell, Cheker } from '../types';
+import { initialBoard } from '../helpers/getInitialBoard';
+import { getAllBlackCheckersMoves } from '../helpers/getAllBlackCheckersMoves';
+import { hasAnyMoves } from '../helpers/hasAnyMoves';
+import { chooseRandomMove } from '../helpers/chooseRandomMove';
 
 export default function ChekerPage() {
   const [board, setBoard] = useState<Cell[][]>(initialBoard);
@@ -100,39 +15,48 @@ export default function ChekerPage() {
     null
   );
   const [isWhiteTurn, setIsWhiteTurn] = useState(true);
+  const [isWinner, setIsWinner] = useState<Cheker>(null);
 
-  const moveChecker = useCallback(
+  //onMove checker
+  const onMoveChecker = useCallback(
     (x: number, y: number, targetX: number, targetY: number) => {
-      console.log('moveChecker');
       const newBoard = [...board];
       const selectedChecker = newBoard[y][x].checker;
 
-      if (newBoard[targetY][targetX].checker !== null) {
-        
-        const jumpX = targetX + (targetX - x);
-        const jumpY = targetY + (targetY - y);
-        newBoard[targetY][targetX].checker = null; 
-        newBoard[jumpY][jumpX].checker = selectedChecker;
-      } else {
-        newBoard[targetY][targetX].checker = selectedChecker;
+      const dx = Math.abs(targetX - x);
+      const dy = Math.abs(targetY - y);
+
+      if (dx === 2 && dy === 2) {
+        const midX = (targetX + x) / 2;
+        const midY = (targetY + y) / 2;
+
+        newBoard[midY][midX].checker = null;
       }
+
+      newBoard[targetY][targetX].checker = selectedChecker;
       newBoard[y][x].checker = null;
+
       setBoard(newBoard);
     },
     [board]
   );
 
+  //handle click checker
   const handleClickCell = (x: number, y: number) => {
-
     console.log('handleClickCell', x, y);
     if (selected) {
-      console.log('selected', selected);
       const { x: selectedX, y: selectedY } = selected;
 
       if (isValidMove(selectedX, selectedY, x, y, board)) {
-        moveChecker(selectedX, selectedY, x, y);
+        onMoveChecker(selectedX, selectedY, x, y);
         setSelected(null);
-        //setIsWhiteTurn(!isWhiteTurn);
+
+        if (!hasAnyMoves(board, false)) {
+          setIsWinner('white');
+          return;
+        }
+
+        setIsWhiteTurn(false);
         return;
       }
     }
@@ -142,6 +66,34 @@ export default function ChekerPage() {
     }
   };
 
+  useEffect(() => {
+    if (!isWhiteTurn) {
+      const moves = getAllBlackCheckersMoves(board);
+      if (moves.length > 0) {
+        const randomMove = chooseRandomMove(board);
+
+        const delay = 2000;
+        const timeoutId = setTimeout(() => {
+          onMoveChecker(
+            randomMove.x,
+            randomMove.y,
+            randomMove.targetX,
+            randomMove.targetY
+          );
+
+          if (!hasAnyMoves(board, true)) {
+            setIsWinner('black');
+          } else {
+            setIsWhiteTurn(true);
+          }
+        }, delay);
+
+        return () => clearTimeout(timeoutId);
+      } else {
+        setIsWinner('white');
+      }
+    }
+  }, [isWhiteTurn, board]);
 
   return (
     <div className='flex flex-col w-full h-screen items-center p-10'>
@@ -149,6 +101,7 @@ export default function ChekerPage() {
         Checkers game
       </h2>
       <CheckersBoard board={board} onClickCell={handleClickCell} />
+      <div>{isWinner ? `Winner: ${isWinner}` : null}</div>
     </div>
   );
 }
